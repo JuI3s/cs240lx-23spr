@@ -20,6 +20,7 @@ struct exprmap
 
 inline static void display_exprmap(struct exprmap *entry)
 {
+    return;
     printf("Display exprmap, n_exprs: %d\n", entry->n_exprs);
     for (int i = 0; i < entry->n_exprs; i++)
     {
@@ -63,16 +64,12 @@ struct exprmap insert_exprmap(const struct exprmap old, uint64_t expr, uint64_t 
 {
     // assert(!"unimplemented");
 
-    printf("c1\n");
-
     // Check if already exists.
     if (lookup_exprmap(old, expr))
     {
-        printf("Already exists\n");
+        // printf("Already exists\n");
         return old;
     }
-
-    printf("c2\n");
 
     size_t n_exprs = old.n_exprs + 1;
 
@@ -83,8 +80,6 @@ struct exprmap insert_exprmap(const struct exprmap old, uint64_t expr, uint64_t 
         ret.deref_labels[i] = old.deref_labels[i];
         ret.exprs[i] = old.exprs[i];
     }
-
-    printf("c3\n");
 
     ret.deref_labels[n_exprs - 1] = deref_label;
     ret.exprs[n_exprs - 1] = expr;
@@ -176,6 +171,7 @@ struct instr
 
 inline static void display_instr(struct instr *item)
 {
+    return;
     printf("label: %lu, visited: %d, opcode: %d\n", item->label, item->visited, item->opcode);
     if (item->opcode == OPCODE_BRANCH)
     {
@@ -216,11 +212,11 @@ void visit(struct instr *instr, struct exprmap derefed)
     // (1) instr is NULL
     if (!instr)
     {
-        printf("Return from null\n");
+        // printf("Return from null\n");
         return;
     }
 
-    printf("Visiting instr label: %lu\n", instr->label);
+    // printf("Visiting instr label: %lu\n", instr->label);
     display_instr(instr);
 
     // (2) this is the first path to reach instr
@@ -234,12 +230,10 @@ void visit(struct instr *instr, struct exprmap derefed)
         instr->always_derefed = intersect_exprmaps(instr->always_derefed, derefed);
         if (instr->always_derefed.n_exprs == intersect_exprmaps(instr->always_derefed, derefed).n_exprs)
         {
-            printf("Return early from instr: %lu\n", instr->label);
+            // printf("Return early from instr: %lu\n", instr->label);
             return;
         }
     }
-
-    printf("b1\n");
 
     // now actually process the instruction:
     // (1) if it's a kill, then we no longer know anything about instr->args[0]
@@ -251,19 +245,14 @@ void visit(struct instr *instr, struct exprmap derefed)
     if (instr->opcode == OPCODE_KILL)
     {
         derefed = remove_exprmap(derefed, instr->args[0]);
-        printf("Remove deref: %d\n", derefed.n_exprs);
+        // printf("Remove deref: %d\n", derefed.n_exprs);
     }
-
-    printf("b2\n");
 
     if (instr->opcode == OPCODE_DEREF)
     {
-        printf("DEREF\n");
         derefed = insert_exprmap(derefed, instr->args[0], instr->label);
-        printf("INSERT deref: %d\n", derefed.n_exprs);
+        // printf("INSERT deref: %d\n", derefed.n_exprs);
     }
-
-    printf("b3\n");
 
     // now recurse on the possible next-instructions. we visit nexts[1] first
     // out of superstition (it's more likely to be NULL and we want to do the
@@ -273,8 +262,6 @@ void visit(struct instr *instr, struct exprmap derefed)
     {
         visit(instr->nexts[1], derefed);
     }
-
-    printf("b4\n");
 
     visit(instr->nexts[0], derefed);
 
@@ -328,8 +315,6 @@ int main()
 
     size_t n_labels = max_label + 1;
 
-    printf("Num labels: %d\n", n_labels);
-
     struct instr **label2instr = calloc(n_labels, sizeof(*label2instr));
 
     for (struct instr *instr = head; instr; instr = instr->nexts[0])
@@ -357,8 +342,8 @@ int main()
             {
                 exit(1);
             }
-            printf("Next 0 label: %lu\n", instr->args[1]);
-            printf("Next 1 label: %lu\n", instr->args[2]);
+            // printf("Next 0 label: %lu\n", instr->args[1]);
+            // printf("Next 1 label: %lu\n", instr->args[2]);
 
             instr->nexts[0] = label2instr[instr->args[1]];
             instr->nexts[1] = label2instr[instr->args[2]];
@@ -366,7 +351,7 @@ int main()
     }
 
     visit(head, (struct exprmap){NULL, NULL, 0});
-    printf("Done visiting\n");
+    // printf("Done visiting\n");
     for (size_t i = 0; i < n_labels; i++)
         check(label2instr[i]);
 }
