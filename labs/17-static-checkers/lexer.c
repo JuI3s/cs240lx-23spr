@@ -6,13 +6,20 @@
 struct lexeme LEXEMES[MAX_LEXEMES] = {0};
 size_t N_LEXEMES = 0;
 
-void lex(char *s) {
+inline static int is_char_in_identifier(char *s)
+{
+    return isdigit(*s) || isalpha(*s) || *s == '_';
+}
+
+void lex(char *s)
+{
     for (char *ptr = s; *ptr; ptr++)
         *ptr = tolower(*ptr);
 
     char *LAST_LINE = s;
     size_t LAST_LINE_NO = 1;
-    for (; *s; s++) {
+    for (; *s; s++)
+    {
         enum lex_label label = LEX_NONE;
         char *start = s;
         // TODO: at the very least, also need to lex here: string literals,
@@ -20,17 +27,48 @@ void lex(char *s) {
         // Note in these examples below, the first four are cases where we
         // throw away some characters (indicated by label = LEX_NONE). In the
         // final example we lex operation characters like [ and !=.
-        assert(!"unimplemented");
-        if (isspace(*s));
-        else if (prefix(s, "/*")) {
-            for (; *s && !prefix(s, "*/"); s++);
-            if (*s) s++;
-        } else if (prefix(s, "//")) {
-            for (; *s && *s != '\n'; s++);
-        } else if (s[0] == '#') {
+        // assert(!"unimplemented");
+        if (isspace(*s))
+            ;
+        else if (*s == '"')
+        {
+            s++;
+            for (; *s != '"'; s++)
+                ;
+            s++;
+            label = LEX_STR_LIT;
+        }
+        else if (is_char_in_identifier(s))
+        {
+            // printf("identifier\n");
+            label = LEX_IDENT;
+            int num_non_digit = 0;
+            for (; is_char_in_identifier(s); s++)
+            {
+                if (isalpha(*s) || *s == '_')
+                    num_non_digit++;
+            }
+            label = num_non_digit > 0 ? LEX_IDENT : LEX_NUM_LIT;
+        }
+        else if (prefix(s, "/*"))
+        {
+            for (; *s && !prefix(s, "*/"); s++)
+                ;
+            if (*s)
+                s++;
+        }
+        else if (prefix(s, "//"))
+        {
+            for (; *s && *s != '\n'; s++)
+                ;
+        }
+        else if (s[0] == '#')
+        {
             for (; *s && *s != '\n'; s++)
                 s += (*s == '\\');
-        } else {
+        }
+        else
+        {
             label = LEX_OP;
             if (strchr("()[]{}.:?,;", *s))
                 s++;
@@ -47,12 +85,13 @@ void lex(char *s) {
         // the array of lexemes. Basically, you need to point @s to one-past
         // the last character you want to be part of the lexeme, and set @label
         // to whatever label you want it to have.
-        if (label == LEX_NONE) continue;
+        if (label == LEX_NONE)
+            continue;
         assert(N_LEXEMES < sizeof(LEXEMES) / sizeof(LEXEMES[0]));
         LEXEMES[N_LEXEMES].string = strndup(start, (size_t)(s - start));
         LEXEMES[N_LEXEMES].label = label;
         for (; LAST_LINE != start; LAST_LINE++)
-             LAST_LINE_NO += (*LAST_LINE == '\n');
+            LAST_LINE_NO += (*LAST_LINE == '\n');
         LEXEMES[N_LEXEMES++].line_no = LAST_LINE_NO;
         s--;
     }
