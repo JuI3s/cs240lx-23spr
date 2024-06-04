@@ -48,6 +48,8 @@ void lex(char *s)
                 if (isalpha(*s) || *s == '_')
                     num_non_digit++;
             }
+
+            // TODO: this mislabels items of the forms "0x.." "0b.." "..ull" ...
             label = num_non_digit > 0 ? LEX_IDENT : LEX_NUM_LIT;
         }
         else if (prefix(s, "/*"))
